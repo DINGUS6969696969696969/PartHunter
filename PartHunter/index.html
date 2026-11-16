@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17272f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PartHunter">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/parthunter.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/parthunter-192.png">
+  <meta name="description" content="Look up automotive parts by part number and compare Australian retailer prices and fitment notes.">
+  <meta property="og:title" content="PartHunter — Australian car parts finder">
+  <meta property="og:description" content="Search a part number or name across Australian stores and compare prices.">
+  <meta property="og:type" content="website">
+  <title>PartHunter — Australian car parts finder</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17272f;
+      --ink-soft: #31434a;
+      --muted: #697980;
+      --line: #dfe7e8;
+      --paper: #f4f7f7;
+      --white: #ffffff;
+      --teal: #137d75;
+      --teal-dark: #0b625d;
+      --teal-pale: #e8f5f2;
+      --amber: #8c5d20;
+      --amber-bg: #fff6e7;
+      --red: #923f3b;
+      --red-bg: #fff0ef;
+      --shadow: 0 20px 55px rgba(22, 47, 54, .09);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    button, input { font: inherit; }
+    a { color: inherit; }
+    .shell { max-width: 1180px; margin: 0 auto; padding: 0 34px; }
+    .topbar {
+      height: 76px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(23, 39, 47, .1);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; text-decoration: none; font-weight: 820; font-size: 17px; letter-spacing: -.045em; }
+    .brand-mark { width: 38px; height: 38px; border-radius: 12px; background: var(--ink); color: #a9e7d7; display: grid; place-items: center; }
+    .brand small { display: block; color: #78878b; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; line-height: 1.1; margin-top: 4px; font-weight: 750; }
+    .nav { display: flex; gap: 28px; align-items: center; }
+    .nav a { font-size: 12px; color: #68787d; text-decoration: none; font-weight: 680; transition: color .18s; }
+    .nav a:hover, .nav a.active { color: var(--ink); }
+    .market { border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.72); padding: 8px 12px; font-size: 10px; font-weight: 780; color: #43565b; letter-spacing: .02em; }
+    .install-app { border: 0; border-radius: 7px; background: var(--teal); color: #fff; padding: 8px 11px; font-size: 10px; font-weight: 760; cursor: pointer; }
+    .install-app:hover { background: var(--teal-dark); }
+    .install-app[hidden] { display: none; }
+
+    .hero { position: relative; padding: 69px 0 31px; min-height: 335px; }
+    .eyebrow { display: flex; align-items: center; gap: 9px; font-size: 10px; color: var(--teal-dark); letter-spacing: .14em; text-transform: uppercase; font-weight: 820; }
+    .eyebrow:before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #24a08e; box-shadow: 0 0 0 4px rgba(36,160,142,.12); }
+    h1 { font-size: clamp(42px, 5.6vw, 66px); line-height: 1.035; letter-spacing: -.068em; max-width: 660px; margin: 19px 0 17px; font-weight: 760; }
+    h1 em { font-style: normal; color: var(--teal); }
+    .intro { color: #62747a; font-size: 15px; max-width: 505px; margin: 0; line-height: 1.7; }
+    .hero-graphic {
+      position: absolute; right: 0; top: 57px; width: 342px; height: 218px;
+      background: radial-gradient(ellipse at 52% 34%, #284852 0%, #1b343d 48%, #172a32 100%);
+      border: 1px solid rgba(255,255,255,.54); border-radius: 24px; display: grid; place-items: center;
+      overflow: hidden; box-shadow: 0 23px 50px rgba(24,51,57,.17);
+    }
+    .hero-graphic:after { content: ""; position: absolute; width: 210px; height: 210px; border-radius: 50%; background: rgba(42,169,147,.12); filter: blur(30px); }
+    .graphic-ring { position: absolute; width: 182px; height: 182px; border: 1px solid rgba(170,223,210,.25); border-radius: 50%; }
+    .graphic-ring:before, .graphic-ring:after { content: ""; position: absolute; inset: 19px; border: 1px solid rgba(170,223,210,.19); border-radius: 50%; }
+    .graphic-ring:after { inset: 42px; }
+    .car-icon { position: relative; z-index: 1; margin-top: -2px; filter: drop-shadow(0 10px 14px rgba(6,20,25,.35)); }
+    .graphic-tag { position: absolute; bottom: 15px; left: 16px; z-index: 2; padding: 7px 10px; color: #d7f3ec; background: rgba(10,30,36,.66); border: 1px solid rgba(192,232,222,.21); border-radius: 7px; font-size: 8px; font-weight: 780; letter-spacing: .12em; }
+    .proof { display: flex; gap: 0; margin-top: 37px; border-top: 1px solid var(--line); max-width: 625px; }
+    .proof div { padding: 15px 24px 0 0; margin-right: 24px; font-size: 10px; color: #78878b; line-height: 1.45; }
+    .proof div:last-child { margin-right: 0; }
+    .proof strong { display: block; color: #33474d; font-size: 11px; font-weight: 760; margin-bottom: 2px; }
+
+    main { padding-bottom: 76px; }
+    .search-card { position: relative; z-index: 2; margin-top: 3px; padding: 20px 21px 15px; background: var(--white); border: 1px solid #dfe7e8; border-radius: 16px; box-shadow: 0 13px 34px rgba(29,56,62,.07); }
+    .search-grid { display: grid; grid-template-columns: minmax(210px, 1fr) minmax(250px, 1.15fr) auto; gap: 13px; align-items: end; }
+    .field label { display: block; font-size: 9px; color: #65777d; font-weight: 820; margin: 0 0 7px 2px; letter-spacing: .1em; }
+    .field input { width: 100%; height: 48px; border: 1px solid #d9e3e4; background: #fbfcfc; border-radius: 9px; padding: 0 13px; outline: none; font-size: 12px; color: var(--ink); transition: border-color .18s, box-shadow .18s, background .18s; }
+    .field input:focus { border-color: #4a9d91; background: #fff; box-shadow: 0 0 0 3px rgba(19,125,117,.12); }
+    .field input::placeholder { color: #9ba9ac; }
+    .primary { height: 48px; padding: 0 20px; border: 0; border-radius: 9px; background: var(--teal); color: #fff; font-size: 11px; font-weight: 780; cursor: pointer; white-space: nowrap; transition: background .18s, transform .18s, box-shadow .18s; }
+    .primary:hover { background: var(--teal-dark); transform: translateY(-1px); box-shadow: 0 6px 15px rgba(19,125,117,.2); }
+    .primary:focus-visible, .samples button:focus-visible, .view-link:focus-visible, a:focus-visible { outline: 3px solid rgba(19,125,117,.3); outline-offset: 2px; }
+    .search-meta { font-size: 10px; color: #819095; margin: 12px 2px 0; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .samples { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .samples span { margin-right: 2px; color: #79888c; }
+    .samples button { border: 1px solid #dce6e5; background: #fff; border-radius: 6px; padding: 5px 8px; color: #42615e; font-size: 9px; font-weight: 720; cursor: pointer; transition: background .18s, border-color .18s; }
+    .samples button:hover { border-color: #95c5bb; background: #f1f8f6; }
+
+    .section-title { display: flex; align-items: end; justify-content: space-between; gap: 15px; margin: 43px 0 14px; }
+    .section-title h2 { margin: 0; font-size: 21px; letter-spacing: -.045em; font-weight: 740; }
+    .section-title p { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
+    .stamp { font-size: 9px; color: #75858a; white-space: nowrap; border: 1px solid #e0e8e8; background: rgba(255,255,255,.55); padding: 6px 9px; border-radius: 6px; }
+    .result-card { background: var(--white); border: 1px solid #dfe7e8; border-radius: var(--radius); overflow: hidden; box-shadow: 0 9px 28px rgba(23,49,54,.045); }
+    .part-head { padding: 22px 24px; background: #fff; border-bottom: 1px solid #e7eded; display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+    .part-info { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .part-icon { height: 46px; width: 46px; flex: 0 0 46px; background: var(--teal-pale); color: var(--teal); border-radius: 12px; display: grid; place-items: center; }
+    .part-info h3 { margin: 0 0 3px; font-size: 16px; letter-spacing: -.025em; font-weight: 740; }
+    .part-info p { margin: 0; font-size: 10px; color: #78878c; }
+    .tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+    .tag { background: #f2f6f5; border: 1px solid #e7eeed; border-radius: 5px; padding: 4px 7px; font: 700 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; color: #53696b; }
+    .brand-tag { background: #f2f3f1; color: #56625b; font: 750 9px/1.2 inherit; border-radius: 6px; padding: 4px 7px; }
+    .lowest { flex: 0 0 auto; background: var(--teal-pale); color: #12675f; border: 1px solid #d4eae5; border-radius: 9px; padding: 9px 12px; font-size: 9px; font-weight: 830; line-height: 1.55; text-align: left; }
+    .lowest:first-line { letter-spacing: .06em; }
+    .fitment { margin: 16px 23px 5px; padding: 12px 14px; border: 1px solid #dfeae7; border-radius: 9px; background: #f7faf9; display: flex; gap: 9px; align-items: flex-start; font-size: 10px; color: #52676b; line-height: 1.55; }
+    .fitment strong { color: #294b4a; font-weight: 780; }
+    .fitment a { margin-left: 3px; color: var(--teal-dark); font-weight: 720; text-decoration: none; white-space: nowrap; }
+    .fitment a:hover { text-decoration: underline; }
+    .fitment.match { background: #eef8f4; border-color: #d2e9df; }
+    .fitment.warn { background: var(--amber-bg); border-color: #f0dfbd; color: #745522; }
+    .fitment.warn strong { color: #76501d; }
+    .fitment.no-match { background: var(--red-bg); border-color: #efd8d6; color: #82463f; }
+    .fitment.no-match strong { color: #7b3935; }
+    .fit-icon { font-size: 13px; line-height: 1.3; font-weight: 800; }
+    .offer-area { padding: 9px 22px 20px; }
+    .offer-labels, .offer { display: grid; grid-template-columns: minmax(190px, 1.25fr) 130px minmax(165px, 1fr) 112px; gap: 13px; align-items: center; }
+    .offer-labels { padding: 10px 9px 9px; color: #89989b; text-transform: uppercase; letter-spacing: .11em; font-size: 8px; font-weight: 820; }
+    .offer { border-top: 1px solid #edf1f1; padding: 14px 9px; min-height: 68px; transition: background .18s; }
+    .offer:hover { background: #fafcfc; }
+    .offer.offer-best { background: linear-gradient(90deg, #eff8f5 0%, #f8fbfa 76%, #fff 100%); }
+    .seller { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .seller-logo { width: 34px; height: 34px; flex: 0 0 34px; border: 1px solid #e0e8e8; background: #fff; border-radius: 9px; display: grid; place-items: center; color: #365a5d; font-size: 9px; font-weight: 820; letter-spacing: -.03em; }
+    .seller-name { font-size: 11px; font-weight: 760; color: #263b41; }
+    .seller-note { margin-top: 2px; font-size: 9px; color: #829094; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .price { font-size: 15px; letter-spacing: -.035em; font-weight: 790; color: #18353a; white-space: nowrap; }
+    .price small { display: block; font-size: 8px; color: #869498; font-weight: 560; letter-spacing: 0; margin-top: 2px; }
+    .status { display: flex; gap: 7px; align-items: flex-start; font-size: 9px; color: #647579; line-height: 1.45; }
+    .status-dot { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: #43a18a; margin-top: 4px; }
+    .status-dot.order { background: #d49b43; }
+    .status-dot.unknown { background: #9ca69f; }
+    .status-dot.out { background: #bd5f56; }
+    .view-link { justify-self: end; text-decoration: none; border: 1px solid #d5e2e1; color: #345c5c; border-radius: 7px; padding: 8px 10px; font-size: 9px; font-weight: 760; white-space: nowrap; transition: background .18s, color .18s, border-color .18s; }
+    .view-link:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .result-note { padding: 13px 7px 0; margin-top: 7px; border-top: 1px solid #edf1f1; color: #7b898c; font-size: 9px; line-height: 1.6; display: flex; gap: 7px; }
+    .result-note a { color: #435b48; }
+    .live-group-heading { padding: 13px 9px 7px; color: #41595d; font-size: 9px; font-weight: 820; letter-spacing: .08em; text-transform: uppercase; }
+    .live-group-heading.related-heading { margin-top: 11px; border-top: 1px solid #edf1f1; padding-top: 17px; color: #81602b; }
+    .live-footnote { margin: 8px 6px 13px; color: #839195; font-size: 9px; line-height: 1.55; }
+    .loading-row { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 42px 20px; color: #64777c; font-size: 11px; }
+    .spinner { width: 16px; height: 16px; border: 2px solid #d8e8e5; border-top-color: var(--teal); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty { padding: 43px 24px; text-align: center; }
+    .search-fallback { max-width: 660px; margin: 19px auto 0; border-top: 1px solid #e8eeee; text-align: left; }
+    .fallback-head, .fallback-row { display: grid; grid-template-columns: minmax(150px,1fr) minmax(160px,1fr) 112px; gap: 12px; align-items: center; }
+    .fallback-head { padding: 11px 9px 7px; color: #8a999d; font-size: 8px; font-weight: 820; letter-spacing: .1em; text-transform: uppercase; }
+    .fallback-row { border-top: 1px solid #edf1f1; padding: 11px 9px; font-size: 10px; color: #30474c; }
+    .fallback-row span:nth-child(2) { color: #7e8d91; font-size: 9px; }
+    .fallback-row a { justify-self: end; color: var(--teal-dark); text-decoration: none; font-size: 9px; font-weight: 780; }
+    .fallback-row a:hover { text-decoration: underline; }
+    .fallback-web { margin-top: 11px; color: #728186; font-size: 9px; }
+    .empty-mark { height: 46px; width: 46px; border-radius: 13px; background: var(--teal-pale); margin: 0 auto 12px; display: grid; place-items: center; font-size: 21px; color: var(--teal); }
+    .empty h3 { font-size: 16px; margin: 0 0 5px; font-weight: 740; }
+    .empty p { font-size: 11px; color: var(--muted); max-width: 465px; margin: 0 auto 16px; }
+    .external { display: inline-flex; margin: 4px; border: 1px solid #d5e2e1; border-radius: 7px; padding: 8px 11px; text-decoration: none; font-size: 10px; font-weight: 750; color: #345c5c; }
+    .external:hover { background: #f2f8f6; }
+    .about { margin-top: 24px; border: 1px solid #e0e8e8; background: rgba(255,255,255,.64); padding: 16px 18px; border-radius: 12px; display: flex; justify-content: space-between; gap: 20px; align-items: center; }
+    .about h3 { font-size: 11px; margin: 0 0 4px; font-weight: 760; }
+    .about p { font-size: 10px; color: #728186; margin: 0; max-width: 680px; line-height: 1.6; }
+    .about a { font-size: 10px; color: var(--teal-dark); font-weight: 760; white-space: nowrap; text-decoration: none; }
+    .about a:hover { text-decoration: underline; }
+    .footer { padding: 17px 0 29px; border-top: 1px solid var(--line); font-size: 9px; color: #7b898c; display: flex; justify-content: space-between; gap: 15px; }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%,15px); opacity: 0; pointer-events: none; background: var(--ink); color: #fff; border-radius: 8px; padding: 10px 14px; font-size: 11px; box-shadow: var(--shadow); transition: .2s; z-index: 10; }
+    .toast.show { transform: translate(-50%,0); opacity: 1; }
+
+    .settings { margin-top: 12px; border-top: 1px solid #edf1f1; padding-top: 10px; font-size: 11px; }
+    .settings summary { cursor: pointer; font-weight: 760; color: #345c5c; width: fit-content; }
+    .settings-body { display: grid; gap: 13px; padding: 13px 0 4px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; align-items: end; }
+    .field-row.one { grid-template-columns: 1fr auto; }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #dce6e5; border-radius: 999px; padding: 6px 11px; font-size: 10px; font-weight: 720; color: #42615e; cursor: pointer; background: #fff; }
+    .chip input { accent-color: var(--teal); margin: 0; }
+    .chip-x { border: 0; background: none; color: #92a1a4; cursor: pointer; padding: 0 0 0 2px; font-size: 13px; line-height: 1; }
+    .ghost { height: 48px; padding: 0 16px; border: 1px solid #d5e2e1; border-radius: 9px; background: #fff; color: #345c5c; font-size: 11px; font-weight: 760; cursor: pointer; }
+    .ghost:hover { background: #f2f8f6; }
+    .hint { margin: 0; font-size: 10px; color: #728186; line-height: 1.6; max-width: 760px; }
+    .toolbar { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: 0 0 12px; font-size: 11px; color: #52676b; }
+    .toolbar[hidden] { display: none; }
+    .toolbar select { border: 1px solid #d9e3e4; border-radius: 7px; padding: 6px 8px; background: #fff; font-size: 11px; color: var(--ink); }
+    .toolbar label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    .toolbar input { accent-color: var(--teal); }
+    #recent button { border-style: dashed; }
+    .badges { display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; }
+    .badge { font-size: 8px; font-weight: 780; border-radius: 4px; padding: 2px 6px; background: #eef1f6; color: #3f5470; }
+    .badge.car { background: var(--teal-pale); color: #12675f; }
+    .broad { padding: 6px 0 0; }
+    .name-form { margin-top: 14px; padding-top: 14px; border-top: 1px solid #edf1f1; }
+    .name-grid { grid-template-columns: minmax(210px, 1fr) auto; }
+    .num { width: 72px; border: 1px solid #d9e3e4; border-radius: 7px; padding: 5px 7px; font-size: 11px; background: #fff; }
+    .brand-chips { flex-basis: 100%; }
+    .brand-chips:empty { display: none; }
+    @media (max-width: 760px) {
+      .shell { padding: 0 21px; }
+      .hero { padding-top: 52px; min-height: 0; }
+      .hero-graphic { display: none; }
+      .intro { max-width: 390px; }
+      .proof { max-width: 100%; margin-top: 25px; }
+      .search-grid { grid-template-columns: 1fr 1fr; }
+      .search-grid .primary { grid-column: 1 / -1; }
+      .offer-labels { display: none; }
+      .offer { grid-template-columns: minmax(150px,1fr) 105px minmax(125px,.8fr); gap: 8px; }
+      .offer .view-link { grid-column: 3; grid-row: 1; justify-self: end; }
+      .offer .status { grid-column: 1; grid-row: 2; }
+      .offer .price { grid-column: 2; grid-row: 1 / 3; align-self: start; padding-top: 8px; }
+      .offer .seller { grid-column: 1; grid-row: 1; }
+      .offer { padding: 13px 7px 12px; min-height: 74px; }
+      .about { align-items: flex-start; flex-direction: column; gap: 8px; }
+    }
+    @media (max-width: 520px) {
+      .shell { padding: 0 16px; }
+      .topbar { height: 66px; }
+      .nav { gap: 12px; }
+      .nav a { font-size: 10px; }
+      .nav a[href="#how"], .market { display: none; }
+      .install-app { padding: 7px 8px; font-size: 9px; }
+      .hero { padding: 42px 0 23px; min-height: 0; }
+      h1 { font-size: 42px; max-width: 390px; margin-top: 17px; }
+      .hero-graphic { width: 105px; height: 93px; right: -2px; top: 106px; border-radius: 17px; opacity: .25; }
+      .graphic-ring { width: 80px; height: 80px; }
+      .graphic-ring:before { inset: 10px; }
+      .graphic-ring:after { inset: 22px; }
+      .graphic-tag, .car-icon { display: none; }
+      .intro { font-size: 13px; max-width: 310px; }
+      .proof { margin-top: 21px; }
+      .proof div { padding: 12px 10px 0 0; margin-right: 10px; font-size: 8px; }
+      .proof strong { font-size: 9px; }
+      .search-card { padding: 14px 13px 12px; margin-top: 0; }
+      .search-grid { grid-template-columns: 1fr; gap: 10px; }
+      .search-grid .primary { grid-column: auto; }
+      .search-meta { font-size: 9px; }
+      .section-title { margin-top: 31px; align-items: flex-start; flex-direction: column; gap: 7px; }
+      .section-title h2 { font-size: 19px; }
+      .stamp { font-size: 8px; }
+      .part-head { padding: 16px; align-items: flex-start; }
+      .part-info { gap: 10px; }
+      .part-icon { width: 39px; height: 39px; flex-basis: 39px; }
+      .part-info h3 { font-size: 14px; }
+      .part-info p { font-size: 9px; line-height: 1.45; }
+      .lowest { font-size: 8px; padding: 7px 8px; max-width: 112px; white-space: normal; }
+      .fitment { margin: 12px 13px 2px; padding: 10px 11px; font-size: 9px; }
+      .fitment a { white-space: normal; }
+      .offer-area { padding: 5px 12px 14px; }
+      .fallback-head, .fallback-row { grid-template-columns: minmax(90px,1fr) minmax(105px,1fr) 78px; gap: 6px; padding-left: 3px; padding-right: 3px; }
+      .offer { grid-template-columns: minmax(0,1fr) 91px; gap: 7px; padding: 12px 3px; }
+      .offer .seller { grid-column: 1; grid-row: 1; }
+      .offer .price { grid-column: 2; grid-row: 1; justify-self: end; font-size: 14px; }
+      .offer .status { grid-column: 1; grid-row: 2; }
+      .offer .view-link { grid-column: 2; grid-row: 2; padding: 7px 8px; font-size: 8px; }
+      .seller-logo { height: 29px; width: 29px; flex-basis: 29px; }
+      .seller-note { max-width: 185px; }
+      .footer { flex-direction: column; gap: 5px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *:before, *:after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="PartHunter home"><span class="brand-mark"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 15.5h16l-1.4-5.2a2 2 0 0 0-1.9-1.5H7.3a2 2 0 0 0-1.9 1.5L4 15.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M3.5 15.5v2a1.5 1.5 0 0 0 1.5 1.5h.7M20.5 15.5v2a1.5 1.5 0 0 1-1.5 1.5h-.7M7 19h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="7.5" cy="15.5" r="1" fill="currentColor"/><circle cx="16.5" cy="15.5" r="1" fill="currentColor"/></svg></span><span>PartHunter<small>Australian car parts</small></span></a>
+      <nav class="nav" aria-label="Main navigation"><a href="#finder" class="active">Part finder</a><a href="#how">How it works</a><span class="market">AU · AUD $</span><button class="install-app" id="installButton" type="button" hidden>Install app</button></nav>
+    </header>
+    <section class="hero" id="top">
+      <div class="eyebrow">Find the right part. Compare the price.</div>
+      <h1>Car parts that fit.<br><em>Prices worth checking.</em></h1>
+      <p class="intro">Search a part number, add your car, and compare sourced Australian listings before you buy.</p>
+      <div class="hero-graphic" aria-hidden="true"><div class="graphic-ring"></div><div class="car-icon"><svg width="126" height="82" viewBox="0 0 126 82" fill="none"><path d="M18 49h90l-5.4-18.3a8 8 0 0 0-7.7-5.7H33.1a8 8 0 0 0-7.7 5.7L18 49Z" fill="#48cbb0" stroke="#153b42" stroke-width="2.5" stroke-linejoin="round"/><path d="M11 48h104v14a5 5 0 0 1-5 5H16a5 5 0 0 1-5-5V48Z" fill="#153b42"/><path d="m34 28-3.7 16h65.4L92 28" stroke="#153b42" stroke-width="2.5" stroke-linejoin="round"/><circle cx="34" cy="63" r="8" fill="#eaf3f2" stroke="#102a31" stroke-width="3"/><circle cx="92" cy="63" r="8" fill="#eaf3f2" stroke="#102a31" stroke-width="3"/><path d="M41 36h41" stroke="#9de3d2" stroke-width="2" stroke-linecap="round"/></svg></div><span class="graphic-tag">PART NUMBER → BEST LISTED PRICE</span></div>
+      <div class="proof"><div><strong>Part-number search</strong>Exact codes & aliases</div><div><strong>Australian listings</strong>Retailer source links</div><div><strong>Fitment notes</strong>With clear caveats</div></div>
+    </section>
+    <main>
+      <section class="search-card" id="finder" aria-label="Part search">
+        <form id="searchForm">
+          <div class="search-grid">
+            <div class="field"><label for="partQuery">PART NUMBER</label><input id="partQuery" name="part" type="search" placeholder="e.g. Z436 or A298S" autocomplete="off" maxlength="80" required></div>
+            <div class="field"><label for="vehicleQuery">YOUR CAR (OPTIONAL)</label><input id="vehicleQuery" name="vehicle" type="text" placeholder="e.g. 2012 Mazda 3 SP25" autocomplete="off"></div>
+            <button class="primary" type="submit">Compare parts <span aria-hidden="true">→</span></button>
+          </div>
+          <div class="search-meta"><span>Searches your selected stores, plus the wider web when you add a search key. The part number is sent to those services.</span><div class="samples"><span>Try:</span><button type="button" data-code="Z436" data-car="2012 Mazda 3 SP25">Ryco Z436</button><button type="button" data-code="A298S" data-car="Audi Q5">Bosch A298S</button><span id="recent"></span></div></div>
+        </form>
+        <form id="nameForm" class="name-form">
+          <div class="search-grid name-grid"><div class="field"><label for="nameQuery">PART NAME</label><input id="nameQuery" type="search" placeholder="e.g. oil filter, brake pads, spark plug" autocomplete="off" maxlength="80" required></div><button class="primary" type="submit">Compare by name <span aria-hidden="true">→</span></button></div>
+          <div class="search-meta"><span>Lists the brands we can find for that part, grouped by brand, with the cheapest highlighted.</span><div class="samples"><span>Try:</span><button type="button" data-name="oil filter">Oil filter</button><button type="button" data-name="brake pads">Brake pads</button><button type="button" data-name="spark plug">Spark plug</button></div></div>
+        </form>
+        <details class="settings" id="settings"><summary>Search sources</summary><div class="settings-body">
+          <div><div class="chips" id="storeChips"></div></div>
+          <div class="field-row one"><div class="field"><label for="customStore">ADD ANOTHER STORE</label><input id="customStore" type="text" placeholder="e.g. example-parts.com.au" autocomplete="off"></div><button type="button" class="ghost" id="addStore">Add store</button></div>
+          <label class="chip" style="width:fit-content"><input type="checkbox" id="crawlOn" checked> Search the open web for any seller (no key needed)</label>
+          <div class="field-row"><div class="field"><label for="ollamaKey">OLLAMA API KEY (OLLAMA.COM)</label><input id="ollamaKey" type="password" autocomplete="off" placeholder="Optional"></div></div>
+          <div class="field-row"><div class="field"><label for="searchApiKey">WEB SEARCH KEY (SEARCHAPI.IO)</label><input id="searchApiKey" type="password" autocomplete="off" placeholder="Optional"></div><div class="field"><label for="serpApiKey">OR SERPAPI KEY</label><input id="serpApiKey" type="password" autocomplete="off" placeholder="Optional"></div></div>
+          <p class="hint">Supercheap, Repco, Autobarn and eBay are searched directly, which is best effort because those sites can change or block automated requests. Added stores are checked as Shopify, WooCommerce or ordinary search pages. Open-web search finds product pages on any site and reads the price from each page. An Ollama key (free account at ollama.com/settings/keys) makes finding those pages more reliable than reading search engines. It is best effort, because search engines can block automated lookups and some sites hide their prices. A web search key adds more reliable Google Shopping results from sellers across Australia (Supercheap, Repco, Autobarn, eBay, Amazon and more, wherever Google lists them). Keys stay in this browser and are only sent to the PartHunter server and the search service. Settings are saved on this device.</p>
+        </div></details>
+      </section>
+      <section aria-labelledby="resultsTitle">
+        <div class="section-title"><div><h2 id="resultsTitle">Price comparison</h2><p id="subtitle">Enter a part number to search live Australian retailer catalogues.</p></div><span class="stamp">Live search · AUD</span></div>
+        <div class="toolbar" id="toolbar" hidden><label>Sort <select id="sortMode"><option value="price">Lowest price</option><option value="brand">Brand A–Z</option><option value="store">Retailer A–Z</option></select></label><label><input type="checkbox" id="inStockOnly"> Hide unavailable</label><label><input type="checkbox" id="exactOnly"> Exact matches only</label><label>Price $ <input type="number" class="num" id="minPrice" min="0" step="1" placeholder="min" aria-label="Minimum price"> – <input type="number" class="num" id="maxPrice" min="0" step="1" placeholder="max" aria-label="Maximum price"></label><label>Range <select id="tierMode"><option value="all">All prices</option><option value="budget">Budget</option><option value="mid">Mid-range</option><option value="premium">Premium</option></select></label><div class="chips brand-chips" id="brandChips"></div></div>
+        <div class="result-card" id="results" aria-live="polite"><div class="empty"><div class="empty-mark">⌕</div><h3>What part are you looking for?</h3><p>Search a known part number to see its tracked Australian offers and fitment notes. Try one of the sample parts above.</p></div></div>
+      </section>
+      <section class="about" id="how"><div><h3>How PartHunter works</h3><p>Each search checks the live catalogues of your selected stores, plus the wider web through Google Shopping when you add a search key. It then separates exact code matches from possible cross-references. It does not search every seller or guarantee vehicle fitment. Prices, delivery and stock can change; confirm the part and checkout total with the retailer.</p></div><a href="#finder">Search a part ↑</a></section>
+    </main>
+    <footer class="footer"><span>PartHunter · Independent Australian parts comparison prototype</span><span>Retailer links open in a new tab. No retailer affiliation. · <a href="/docs">API docs</a></span></footer>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script>
+    const parts = [
+      {
+        number:"Z436", aliases:["RYCOZ436"], brand:"Ryco", name:"Z436 Oil Filter", category:"Oil filter", detail:"Spin-on filter · M20 × 1.5 thread · 65 mm high", compatible:"2009–2014 Mazda 3 SP25", fitSource:"Supercheap Auto part page", fitType:"exact",
+        fitUrl:"https://www.supercheapauto.com.au/p/ryco-ryco-oil-filter-z436/155611.html?cgid=SCA01070302",
+        offers:[
+          {merchant:"Automotive Superstore", initial:"AS", note:"Ryco oil filter · online listing", price:12.29, availability:"Add to cart · shipping options listed", state:"listed", url:"https://automotivesuperstore.com.au/ryco-z436"},
+          {merchant:"Auto One", initial:"AO", note:"Ryco Oil Filter · Z436", price:21.95, availability:"Delivery/store availability by postcode", state:"check", url:"https://www.autoone.com.au/products/z436-ryco-oil-filter"},
+          {merchant:"Supercheap Auto", initial:"SCA", note:"Ryco Oil Filter Z436 · item 155611", price:23.99, availability:"Add to cart · check local store stock", state:"listed", url:"https://www.supercheapauto.com.au/p/ryco-ryco-oil-filter-z436/155611.html?cgid=SCA01070302"}
+        ]
+      },
+      {
+        number:"A298S", aliases:["3397007298","BOSCHA298S"], brand:"Bosch", name:"Aerotwin Wiper Blade Set", category:"Wiper blades", detail:"Front blade set · Bosch code A298S", compatible:"Audi A4, A5, Q3, Q5, RS4, S4, SQ5; Porsche Macan; Skoda Kodiaq; Volvo S90, V90, XC40, XC90", fitSource:"A1 Autoparts Niddrie listing", fitType:"model",
+        fitUrl:"https://www.a1autopartsniddrie.com.au/products/bosch-wiper-blades-set-a298s",
+        offers:[
+          {merchant:"Supercheap Auto", initial:"SCA", note:"Bosch Aerotwin set · item SPO3271320", price:64.99, availability:"Special order · check store and delivery", state:"order", url:"https://www.supercheapauto.com.au/p/bosch-aerotwin-wiper-blade-set/SPO3271320.html"},
+          {merchant:"A1 Autoparts Niddrie", initial:"A1", note:"Bosch Wiper Blades Set · A298S", price:69.30, availability:"Only 2 left · retailer stock may change", state:"stock", url:"https://www.a1autopartsniddrie.com.au/products/bosch-wiper-blades-set-a298s"}
+        ]
+      }
+    ];
+
+    const normalize = value => (value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const money = value => new Intl.NumberFormat("en-AU", {style:"currency",currency:"AUD"}).format(value);
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+    const results = document.getElementById("results");
+    const query = document.getElementById("partQuery");
+    const vehicle = document.getElementById("vehicleQuery");
+    const subtitle = document.getElementById("subtitle");
+    const form = document.getElementById("searchForm");
+    const toolbar=document.getElementById("toolbar"),sortMode=document.getElementById("sortMode"),inStockOnly=document.getElementById("inStockOnly"),exactOnly=document.getElementById("exactOnly"),minPrice=document.getElementById("minPrice"),maxPrice=document.getElementById("maxPrice"),tierMode=document.getElementById("tierMode"),brandChips=document.getElementById("brandChips"),nameForm=document.getElementById("nameForm"),nameQuery=document.getElementById("nameQuery");
+    let lastCode="",lastPayload=null,lastMode="code",selectedBrands=new Set(),defaultStores=["A1 Autoparts Niddrie","Auto One","Sunbury Auto Parts","Supercheap Auto","Repco","Autobarn","eBay Australia"];
+    let cfg={};try{cfg=JSON.parse(localStorage.getItem("parthunter-settings")||localStorage.getItem("partscout-settings"))||{};}catch(_){}
+    cfg.off=cfg.off||[];cfg.extra=cfg.extra||[];cfg.searchapi=cfg.searchapi||"";cfg.serpapi=cfg.serpapi||"";cfg.ollama=cfg.ollama||"";cfg.recent=cfg.recent||[];
+    const saveCfg=()=>{try{localStorage.setItem("parthunter-settings",JSON.stringify(cfg));}catch(_){}};
+    const hasWebKey=()=>cfg.crawl!==false||!!(cfg.searchapi||cfg.serpapi||cfg.ollama);
+    function showToast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600);}
+    const chipBox=document.getElementById("storeChips");
+    function renderChips(){chipBox.innerHTML=[...defaultStores,...cfg.extra].map(n=>`<label class="chip"><input type="checkbox" data-store="${escapeHtml(n)}" ${cfg.off.includes(n)?"":"checked"}>${escapeHtml(n)}${cfg.extra.includes(n)?`<button type="button" class="chip-x" data-remove="${escapeHtml(n)}" aria-label="Remove ${escapeHtml(n)}">×</button>`:""}</label>`).join("");}
+    chipBox.addEventListener("change",e=>{const n=e.target.dataset.store;if(!n)return;cfg.off=e.target.checked?cfg.off.filter(x=>x!==n):[...cfg.off,n];saveCfg();});
+    chipBox.addEventListener("click",e=>{const n=e.target.dataset.remove;if(!n)return;e.preventDefault();cfg.extra=cfg.extra.filter(x=>x!==n);cfg.off=cfg.off.filter(x=>x!==n);saveCfg();renderChips();});
+    document.getElementById("addStore").addEventListener("click",()=>{const input=document.getElementById("customStore");const host=input.value.trim().toLowerCase().replace(/^https?:\/\//,"").replace(/\/.*$/,"");if(!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host)){showToast("Enter a store address like example.com.au");return;}if(cfg.extra.length>=8){showToast("You can add up to 8 stores");return;}if(!cfg.extra.includes(host)){cfg.extra.push(host);saveCfg();renderChips();}input.value="";showToast("Added. PartHunter will work out how to search it.");});
+    [["searchApiKey","searchapi"],["serpApiKey","serpapi"],["ollamaKey","ollama"]].forEach(([id,key])=>{const el=document.getElementById(id);el.value=cfg[key];el.addEventListener("change",()=>{cfg[key]=el.value.trim();saveCfg();});});
+    const crawlOn=document.getElementById("crawlOn");crawlOn.checked=cfg.crawl!==false;crawlOn.addEventListener("change",()=>{cfg.crawl=crawlOn.checked;saveCfg();});
+    renderChips();
+    if(location.protocol!=="file:")fetch("/api/stores").then(r=>r.json()).then(d=>{if(d.stores)defaultStores=d.stores;renderChips();}).catch(()=>{});
+    const recentBox=document.getElementById("recent");
+    function renderRecent(){recentBox.innerHTML=cfg.recent.map(c=>`<button type="button" data-recent="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join("");}
+    recentBox.addEventListener("click",e=>{const c=e.target.dataset.recent;if(c){query.value=c;searchPart(c);}});
+    function saveRecent(c){cfg.recent=[c,...cfg.recent.filter(x=>x.toLowerCase()!==c.toLowerCase())].slice(0,5);saveCfg();renderRecent();}
+    renderRecent();
+    function searchUrl(code,mode){const p=new URLSearchParams({q:code});if(mode)p.set("mode",mode);if(vehicle.value.trim())p.set("vehicle",vehicle.value.trim());if(cfg.off.length)p.set("off",cfg.off.join("|"));if(cfg.extra.length)p.set("extra",cfg.extra.join(","));if(cfg.crawl===false)p.set("crawl","0");return "/api/search?"+p;}
+    function searchHeaders(){const h={Accept:"application/json"};if(/^[\x21-\x7e]+$/.test(cfg.searchapi))h["X-Search-API-Key"]=cfg.searchapi;if(/^[\x21-\x7e]+$/.test(cfg.serpapi))h["X-Serp-API-Key"]=cfg.serpapi;if(/^[\x21-\x7e]+$/.test(cfg.ollama))h["X-Ollama-API-Key"]=cfg.ollama;return h;}
+    [sortMode,inStockOnly,exactOnly,minPrice,maxPrice,tierMode].forEach(el=>el.addEventListener("input",()=>rerender()));
+    const brandOf=o=>o.brand||"Other";
+    function tierCuts(items){const p=items.map(i=>i.price).sort((a,b)=>a-b);return p.length<3?null:[p[Math.floor((p.length-1)/3)],p[Math.floor((p.length-1)*2/3)]];}
+    const tierOf=(price,cuts)=>price<=cuts[0]?"budget":price<=cuts[1]?"mid":"premium";
+    const tierLabel={budget:"Budget",mid:"Mid-range",premium:"Premium"};
+    function applyFilters(items){
+      const lo=parseFloat(minPrice.value),hi=parseFloat(maxPrice.value),cuts=tierCuts(items);
+      return items.filter(i=>{
+        if(inStockOnly.checked&&i.state==="out")return false;
+        if(!isNaN(lo)&&i.price<lo)return false;
+        if(!isNaN(hi)&&i.price>hi)return false;
+        if(selectedBrands.size&&!selectedBrands.has(brandOf(i)))return false;
+        if(cuts&&tierMode.value!=="all"&&tierOf(i.price,cuts)!==tierMode.value)return false;
+        return true;
+      });
+    }
+    function updateBrandChips(items){
+      const counts={};items.forEach(i=>{counts[brandOf(i)]=(counts[brandOf(i)]||0)+1;});
+      const names=Object.keys(counts).sort();
+      brandChips.innerHTML=names.length>1?names.map(n=>`<label class="chip"><input type="checkbox" data-brand="${escapeHtml(n)}" ${selectedBrands.has(n)?"checked":""}>${escapeHtml(n)} (${counts[n]})</label>`).join(""):"";
+    }
+    brandChips.addEventListener("change",e=>{const n=e.target.dataset.brand;if(!n)return;if(e.target.checked)selectedBrands.add(n);else selectedBrands.delete(n);rerender();});
+    function rerender(){if(!lastPayload)return;if(lastMode==="name")renderByName(lastCode,lastPayload);else renderLive(lastCode,lastPayload);}
+    function offerRow(o,cls,extra){
+      const priceNote=o.web_result?"web listing · shipping varies":o.variable_price?"live price range · shipping extra":"live listing · shipping extra";
+      const dot=o.state==="order"?"order":o.state==="out"?"out":"";
+      return `<article class="offer ${cls||""}"><div class="seller"><span class="seller-logo">${escapeHtml((o.retailer||"?").slice(0,2).toUpperCase())}</span><div><div class="seller-name">${escapeHtml(o.retailer)}</div><div class="seller-note" title="${escapeHtml(o.title)}">${escapeHtml(o.title)}</div>${extra||""}</div></div><div class="price">${o.variable_price?"From ":""}${money(o.price)}<small>${priceNote}</small></div><div class="status"><i class="status-dot ${dot}"></i><span>${escapeHtml(o.availability)}</span></div><a class="view-link" href="${escapeHtml(o.url)}" target="_blank" rel="noopener noreferrer">View offer ↗</a></article>`;
+    }
+    function renderByName(term,payload){
+      const all=payload.results||[];
+      updateBrandChips(all);
+      const cuts=tierCuts(all);
+      const byPrice=(a,b)=>(a.state==="out")-(b.state==="out")||a.price-b.price;
+      let items=applyFilters(all);
+      if(exactOnly.checked)items=items.filter(i=>i.match_kind==="exact");
+      const cheapest=([...items.filter(i=>i.state!=="out"),...items.filter(i=>i.state==="out")]).sort(byPrice)[0]||null;
+      const groups={};items.forEach(i=>{(groups[brandOf(i)]=groups[brandOf(i)]||[]).push(i);});
+      const brands=Object.keys(groups).map(name=>{const list=groups[name].sort(byPrice);return {name,list,best:list[0]};});
+      brands.sort(sortMode.value==="price"?(a,b)=>byPrice(a.best,b.best):(a,b)=>(a.name==="Other")-(b.name==="Other")||a.name.localeCompare(b.name));
+      const checked=payload.checked_at?new Date(payload.checked_at).toLocaleString("en-AU",{dateStyle:"medium",timeStyle:"short",timeZone:"Australia/Sydney"}):"just now";
+      subtitle.textContent=`${items.length} listing${items.length===1?"":"s"} across ${brands.length} brand${brands.length===1?"":"s"} for “${term}”.`;
+      const lowest=cheapest?`<span class="lowest">CHEAPEST<br>${money(cheapest.price)} · ${escapeHtml(brandOf(cheapest))}<br>at ${escapeHtml(cheapest.retailer)}</span>`:"";
+      const rows=brands.map(b=>`<div class="live-group-heading related-heading">${escapeHtml(b.name)} · ${b.list.length} listing${b.list.length===1?"":"s"} · from ${money(b.best.price)}</div>${b.list.map(o=>{
+        const tags=[];
+        if(o===cheapest)tags.push('<span class="badge car">Cheapest overall</span>');else if(o===b.best&&b.list.length>1)tags.push(`<span class="badge">Cheapest ${escapeHtml(b.name)}</span>`);
+        if(cuts)tags.push(`<span class="badge">${tierLabel[tierOf(o.price,cuts)]}</span>`);
+        const extra=`<div class="badges">${tags.join("")}${offerBadges(o).replace(/^<div class="badges">|<\/div>$/g,"")}</div>`;
+        return offerRow(o,o===cheapest?"offer-best":"",extra);}).join("")}`).join("");
+      const empty=items.length?"":`<p class="live-footnote">No listings match these filters. Clear the price range, range or brand filters to see more.</p>`;
+      const errors=(payload.errors||[]).map(i=>i.retailer).join(", ");
+      results.innerHTML=`<div class="part-head"><div class="part-info"><span class="part-icon" aria-hidden="true"><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M5 8h14l2 9H3l2-9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 8V5h8v3M7 17v2M17 17v2M7 12h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><h3>${escapeHtml(term.charAt(0).toUpperCase()+term.slice(1))}</h3><p>Compared by name across brands</p><div class="tags"><span class="tag">${items.length} LISTINGS</span><span class="tag">${brands.length} BRANDS</span></div></div></div>${lowest}</div>
+        <div class="fitment warn"><span class="fit-icon" aria-hidden="true">!</span><span><strong>A part name does not confirm fitment.</strong> ${vehicle.value?`Listings that mention ${escapeHtml(vehicle.value)} are flagged, but confirm the exact part number for your car with the seller.`:"Add your car above to flag listings that mention it, and confirm the exact part number with the seller."}</span></div>
+        <div class="offer-area"><div class="offer-labels"><span>Retailer & listing</span><span>Price</span><span>Availability</span><span></span></div>${rows}${empty}<div class="result-note"><span aria-hidden="true">ⓘ</span><span>Checked ${escapeHtml(checked)}.${errors?` Some sources did not respond: ${escapeHtml(errors)}.`:""} Budget, mid-range and premium are the cheapest, middle and top third of the prices found. Brands come from the listing, so some may show as Other. Delivery is not included.</span></div>${broadBlock(term,payload)}</div>`;
+    }
+    async function nameSearch(term){
+      lastMode="name";selectedBrands=new Set();sortMode.value="brand";
+      subtitle.textContent=`Finding “${term}” across brands…`;
+      results.innerHTML=`<div class="loading-row"><span class="spinner" aria-hidden="true"></span><span>Checking each brand we can find for “${escapeHtml(term)}” at your selected stores. This takes a little longer than a part-number search.</span></div>`;
+      try{
+        const response=await fetch(searchUrl(term,"name"),{headers:searchHeaders()});
+        const payload=await response.json();
+        if(!response.ok){const err=new Error(payload.error||"The search could not be completed.");err.fromServer=true;throw err;}
+        lastCode=term;lastPayload=payload;
+        if((payload.results||[]).length){toolbar.hidden=false;renderByName(term,payload);return;}
+        toolbar.hidden=true;
+        renderUnknown(term,payload.stores_checked===0?"The live catalogues could not be reached right now.":"The stores checked did not list anything with that name.");
+      }catch(error){toolbar.hidden=true;renderUnknown(term,error.fromServer?error.message:"Could not reach PartHunter's search server. Start the app with its launcher and try again.");}
+    }
+    nameForm.addEventListener("submit",e=>{e.preventDefault();const t=nameQuery.value.trim().replace(/\s+/g," ");if(!t){nameQuery.focus();return;}try{localStorage.setItem("parthunter-vehicle",vehicle.value.trim());}catch(_){}nameSearch(t);document.querySelector(".section-title").scrollIntoView({behavior:"smooth",block:"start"});});
+    document.querySelectorAll("[data-name]").forEach(b=>b.addEventListener("click",()=>{nameQuery.value=b.dataset.name;nameForm.requestSubmit();}));
+    function offerBadges(o){const b=[];if(o.web_result)b.push('<span class="badge">From the web</span>');if(o.vehicle_hint==="mentions")b.push('<span class="badge car">Listing mentions your car</span>');return b.length?`<div class="badges">${b.join("")}</div>`:"";}
+    function broadBlock(code,payload){const links=searchLinks(code).slice(3).map(i=>`<a class="external" target="_blank" rel="noopener noreferrer" href="${i.url}">${escapeHtml(i.label)} ↗</a>`).join("");const note=payload.web_search_enabled?(payload.web_search_error?"Part of the web search failed. Search engines sometimes block automated requests, so try again, or add a search key under Search sources.":""):"Turn on open-web search under Search sources to include sellers from across the web.";return `<div class="broad"><div class="live-group-heading">Search the wider web yourself</div>${note?`<p class="live-footnote">${note}</p>`:""}<div>${links}</div></div>`;}
+
+    try { vehicle.value = localStorage.getItem("parthunter-vehicle") || localStorage.getItem("partscout-vehicle") || ""; } catch (_) {}
+    function lookup(code){const key=normalize(code);return parts.find(part=>[part.number,...part.aliases].some(alias=>normalize(alias)===key));}
+    function matchVehicle(part, car){
+      const text=normalize(car);
+      if(!text) return {kind:"neutral", title:"Vehicle not entered", body:`Known application: ${part.compatible}. ${part.fitSource} lists this application; verify exact model, year and trim with the retailer.`, icon:"ⓘ"};
+      if(part.fitType==="exact"){
+        const yearMatch=text.match(/(?:19|20)\d{2}/);
+        const isMazda=text.includes("MAZDA3") && text.includes("SP25");
+        const yearOk=!yearMatch || (+yearMatch[0]>=2009 && +yearMatch[0]<=2014);
+        if(isMazda && yearOk) return {kind:"match",title:"Catalog fitment match",body:`${part.compatible} is listed for this vehicle by Supercheap Auto. Confirm the exact engine and variant before ordering.`,icon:"✓"};
+        return {kind:"no-match",title:"No sourced fitment match",body:`This starter catalog only confirms ${part.compatible}. Check your exact car with the retailer before buying.`,icon:"!"};
+      }
+      const models=["AUDIA4","AUDIA5","AUDIQ3","AUDIQ5","AUDIRS4","AUDIS4","AUDISQ5","PORSCHEMACAN","SKODAKODIAQ","VOLVOS90","VOLVOV90","VOLVOXC40","VOLVOXC90"];
+      const modelMatch=models.some(model=>text.includes(model));
+      if(modelMatch) return {kind:"warn",title:"Model appears in seller fitment list",body:`${part.fitSource} lists this model, but the listing does not show the full year/trim coverage. Verify the exact blade fit before ordering.`,icon:"!"};
+      return {kind:"no-match",title:"No sourced fitment match",body:`Seller-listed models: ${part.compatible}. Confirm your exact vehicle using the retailer's fitment tool.`,icon:"!"};
+    }
+    function searchLinks(code){
+      const q=encodeURIComponent(code.trim());
+      return [
+        {label:"A1 Autoparts Niddrie",url:`https://www.a1autopartsniddrie.com.au/search?q=${q}`},
+        {label:"Auto One",url:`https://www.autoone.com.au/search?q=${q}`},
+        {label:"Sunbury Auto Parts",url:`https://www.sunburyautoparts.com.au/search?q=${q}`},
+        {label:"Google Shopping",url:`https://www.google.com/search?tbm=shop&q=${q}`},
+        {label:"eBay Australia",url:`https://www.ebay.com.au/sch/i.html?_nkw=${q}`},
+        {label:"Supercheap Auto",url:`https://www.supercheapauto.com.au/search?q=${q}`},
+        {label:"Repco",url:`https://www.repco.com.au/en/search?q=${q}`},
+        {label:"Autobarn",url:`https://www.autobarn.com.au/search?q=${q}`},
+        {label:"Amazon Australia",url:`https://www.amazon.com.au/s?k=${q}`}
+      ];
+    }
+    function renderUnknown(code,message="No matching listing came back from the live store search."){
+      const safe=escapeHtml(code.trim()||"that number");
+      subtitle.textContent="No listing found in the live catalogues checked.";
+      const links=searchLinks(code);
+      const fileHint=location.protocol==="file:"?" This copy is open as a file; launch it with Start PartHunter.command or Start PartHunter.bat to enable the in-app comparison.":"";
+      const rows=links.slice(0,3).map(item=>`<div class="fallback-row"><strong>${escapeHtml(item.label)}</strong><span>No in-app price returned</span><a target="_blank" rel="noopener noreferrer" href="${item.url}">Search store ↗</a></div>`).join("");
+      const broader=links.slice(3).map(item=>`<a class="external" target="_blank" rel="noopener noreferrer" href="${item.url}">${escapeHtml(item.label)} ↗</a>`).join("");
+      results.innerHTML=`<div class="empty"><div class="empty-mark">⌕</div><h3>No exact result for ${safe}</h3><p>${escapeHtml(message)}${fileHint} The stores below did not return a price for this code. Search them directly, or try a shorter part number. Confirm cross-references and vehicle fitment with the seller.</p><div class="search-fallback"><div class="fallback-head"><span>Store</span><span>In-app result</span><span></span></div>${rows}</div><div class="fallback-web">Wider searches</div>${broader}</div>`;
+    }
+    function renderLoading(code){
+      subtitle.textContent=`Searching Australian parts catalogues for ${code}…`;
+      results.innerHTML=`<div class="loading-row"><span class="spinner" aria-hidden="true"></span><span>Checking live listings across your selected stores${hasWebKey()?" and the wider web":""}</span></div>`;
+    }
+    function renderSnapshot(code,message){
+      render(code);
+      const notice=document.createElement("div");
+      notice.className="fitment warn";
+      notice.innerHTML=`<span class="fit-icon" aria-hidden="true">!</span><span><strong>Showing saved listings.</strong> ${escapeHtml(message)} Saved prices may have changed; confirm on the retailer page.</span>`;
+      results.prepend(notice);
+    }
+    function renderLive(code,payload){
+      const part=lookup(code);
+      const all=[...(payload.results||[])];
+      const cmp=(a,b)=>(a.state==="out")-(b.state==="out")||(sortMode.value==="store"?a.retailer.localeCompare(b.retailer):sortMode.value==="brand"?brandOf(a).localeCompare(brandOf(b)):0)||a.price-b.price;
+      updateBrandChips(all);
+      const visible=applyFilters(all);
+      const exact=visible.filter(item=>item.match_kind==="exact").sort(cmp);
+      const related=exactOnly.checked?[]:visible.filter(item=>item.match_kind==="related").sort(cmp);
+      const similar=exactOnly.checked?[]:visible.filter(item=>item.match_kind==="similar").sort(cmp);
+      const best=exact.find(item=>item.available)||exact[0]||null;
+      const checked=payload.checked_at?new Date(payload.checked_at).toLocaleString("en-AU",{dateStyle:"medium",timeStyle:"short",timeZone:"Australia/Sydney"}):"just now";
+      const retailers=[...new Set(all.map(item=>item.retailer))];
+      subtitle.textContent=`Live part-number search · ${exact.length} exact match${exact.length===1?"":"es"} · ${payload.stores_checked}/${payload.store_count} stores responded${payload.web_search_enabled&&!payload.web_search_error?" · web search on":""}.`;
+      const title=part?part.name:(exact[0]?.title||`Possible matches for ${code}`);
+      const tags=`<span class="tag">SEARCH ${escapeHtml(code)}</span>${part?.brand?`<span class="tag">${escapeHtml(part.brand)}</span>`:""}`;
+      const lowest=best?`<span class="lowest">LOWEST ${best.available?"AVAILABLE":"LISTED"} EXACT<br>${money(best.price)} at ${escapeHtml(best.retailer)}</span>`:`<span class="lowest">NO EXACT<br>CODE MATCH</span>`;
+      let fit;
+      if(part){fit=matchVehicle(part,vehicle.value);}
+      else{fit={kind:"warn",title:"Vehicle fitment still needs confirmation",body:vehicle.value?`Live listings match the entered part number or reference, but this lookup does not verify fitment for ${vehicle.value}. Check the retailer's vehicle selector before ordering.`:"These live listings match the entered code or a related reference. Add your car and confirm exact fitment on the retailer page before ordering.",icon:"!"};}
+      const fitClass=fit.kind==="match"?"match":fit.kind==="warn"?"warn":fit.kind==="no-match"?"no-match":"";
+      const fitLink=part?.fitUrl?`<a href="${part.fitUrl}" target="_blank" rel="noopener noreferrer">View fitment source ↗</a>`:"";
+      function offerRows(items, highlightBest){
+        return items.map(offer=>{
+          const isBest=highlightBest&&offer===best;
+          const initials={"A1 Autoparts Niddrie":"A1","Auto One":"AO","Sunbury Auto Parts":"SA"};
+          const note=[offer.vendor,offer.category].filter(Boolean).join(" · ")||offer.title;
+          const priceNote=offer.web_result?"web listing · shipping varies":offer.variable_price?"live price range · shipping extra":"live listing · shipping extra";
+          const dot=offer.state==="order"?"order":offer.state==="out"?"out":"";
+          return `<article class="offer ${isBest?"offer-best":""}"><div class="seller"><span class="seller-logo">${initials[offer.retailer]||escapeHtml(offer.retailer.slice(0,2).toUpperCase())}</span><div><div class="seller-name">${escapeHtml(offer.retailer)}</div><div class="seller-note" title="${escapeHtml(offer.title)}">${escapeHtml(offer.title)}</div>${offerBadges(offer)}</div></div><div class="price">${offer.variable_price?"From ":""}${money(offer.price)}<small>${priceNote}</small></div><div class="status"><i class="status-dot ${dot}"></i><span>${escapeHtml(offer.availability)}</span></div><a class="view-link" href="${escapeHtml(offer.url)}" target="_blank" rel="noopener noreferrer">View offer ↗</a></article>`;
+        }).join("");
+      }
+      const exactGroup=exact.length?`<div class="live-group-heading">Exact part-number matches</div>${offerRows(exact,true)}`:"";
+      const relatedGroup=related.length?`<div class="live-group-heading related-heading">Possible cross-references · verify before buying</div>${offerRows(related,false)}`:"";
+      const noExact=exact.length?"":"<p class=\"live-footnote\">No listing matched this exact code. Anything below is a cross-reference or the closest the stores returned, so ask the seller to confirm it is the right part.</p>";
+      const errors=(payload.errors||[]).map(item=>item.retailer).join(", ");
+      const errorNote=errors?` Some stores did not respond: ${escapeHtml(errors)}.`:"";
+      results.innerHTML=`<div class="part-head"><div class="part-info"><span class="part-icon" aria-hidden="true"><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M5 8h14l2 9H3l2-9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 8V5h8v3M7 17v2M17 17v2M7 12h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><h3>${escapeHtml(title)}</h3><p>Live retailer catalogue search · ${escapeHtml(code)}</p><div class="tags">${tags}</div></div></div>${lowest}</div>
+        <div class="fitment ${fitClass}"><span class="fit-icon" aria-hidden="true">${fit.icon}</span><span><strong>${escapeHtml(fit.title)}.</strong> ${escapeHtml(fit.body)} ${fitLink}</span></div>
+        <div class="offer-area"><div class="offer-labels"><span>Retailer & listing</span><span>Live price</span><span>Availability</span><span></span></div>${exactGroup}${relatedGroup}${similar.length?`<div class="live-group-heading related-heading">Closest matches · different part numbers, check before buying</div>${offerRows(similar,false)}`:""}${noExact}<div class="result-note"><span aria-hidden="true">ⓘ</span><span>Checked ${escapeHtml(checked)} from ${escapeHtml(retailers.join(", ")||"the responding stores")}.${errorNote} Prices come from your selected stores and any web search key, so they may not cover every seller. Delivery is not included and availability can change. Confirm the product code, vehicle fitment, and checkout total at the retailer.</span></div>${broadBlock(code,payload)}</div>`;
+    }
+    async function searchPart(code){
+      lastMode="code";selectedBrands=new Set();
+      renderLoading(code);
+      const part=lookup(code);
+      try{
+        const searchCode=part?.number||code;
+        const response=await fetch(searchUrl(searchCode),{headers:searchHeaders()});
+        const payload=await response.json();
+        if(!response.ok){const err=new Error(payload.error||"The parts search could not be completed.");err.fromServer=true;throw err;}
+        lastCode=code;lastPayload=payload;saveRecent(code);
+        if((payload.results||[]).length){toolbar.hidden=false;renderLive(code,payload);return;}
+        toolbar.hidden=true;
+        if(part){renderSnapshot(code,payload.errors?.length?"Live store search did not respond, so the app is showing its saved source listings.":"No live result was returned, so the app is showing its saved source listings.");return;}
+        const message=payload.stores_checked===0?"The live catalogues could not be reached right now.":"The live catalogues checked did not return a match.";
+        renderUnknown(code,message);
+      }catch(error){
+        if(part){renderSnapshot(code,"The live search could not connect. The app is showing its saved source listings.");return;}
+        renderUnknown(code,error.fromServer?error.message:"Could not reach PartHunter's search server. Start the app with its launcher and try again.");
+      }
+    }
+    function render(code){
+      const part=lookup(code);
+      if(!part){renderUnknown(code);return;}
+      const offers=[...part.offers].sort((a,b)=>a.price-b.price);
+      const best=offers[0];
+      const fit=matchVehicle(part,vehicle.value);
+      const fitClass=fit.kind==="match"?"match":fit.kind==="warn"?"warn":fit.kind==="no-match"?"no-match":"";
+      subtitle.textContent=`Saved catalogue listings for ${part.number}. Live search was unavailable.`;
+      results.innerHTML=`
+        <div class="part-head"><div class="part-info"><span class="part-icon" aria-hidden="true"><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M5 8h14l2 9H3l2-9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 8V5h8v3M7 17v2M17 17v2M7 12h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><h3>${escapeHtml(part.name)}</h3><p>${escapeHtml(part.brand)} · ${escapeHtml(part.category)} · ${escapeHtml(part.detail)}</p><div class="tags"><span class="tag">PART ${escapeHtml(part.number)}</span>${part.aliases.length?`<span class="tag">ALT ${escapeHtml(part.aliases[0])}</span>`:""}</div></div></div><span class="lowest">SAVED LOWEST<br>${money(best.price)} at ${escapeHtml(best.merchant)}</span></div>
+        <div class="fitment ${fitClass}"><span class="fit-icon" aria-hidden="true">${fit.icon}</span><span><strong>${escapeHtml(fit.title)}.</strong> ${escapeHtml(fit.body)} <a href="${part.fitUrl}" target="_blank" rel="noopener noreferrer">View fitment source ↗</a></span></div>
+        <div class="offer-area"><div class="offer-labels"><span>Retailer</span><span>Saved price</span><span>Availability</span><span></span></div>${offers.map((offer,index)=>`<article class="offer ${index===0?"offer-best":""}"><div class="seller"><span class="seller-logo">${escapeHtml(offer.initial)}</span><div><div class="seller-name">${escapeHtml(offer.merchant)}</div><div class="seller-note">${escapeHtml(offer.note)}</div></div></div><div class="price">${money(offer.price)}<small>saved price · confirm at store</small></div><div class="status"><i class="status-dot ${offer.state==="order"?"order":offer.state==="check"?"unknown":""}"></i><span>${escapeHtml(offer.availability)}</span></div><a class="view-link" href="${offer.url}" target="_blank" rel="noopener noreferrer">View offer ↗</a></article>`).join("")}
+        <div class="result-note"><span aria-hidden="true">ⓘ</span><span>These saved listings are fallback data from 13 Nov 2026, not live prices. “Lowest” compares only these saved sources. ${escapeHtml(part.fitSource)} is the fitment reference; check the exact vehicle and final checkout total at the retailer.</span></div></div>`;
+    }
+    form.addEventListener("submit",event=>{
+      event.preventDefault();
+      const code=query.value.trim();
+      if(!code){query.focus();return;}
+      try{localStorage.setItem("parthunter-vehicle",vehicle.value.trim());}catch(_){}
+      searchPart(code);
+      document.querySelector(".section-title").scrollIntoView({behavior:"smooth",block:"start"});
+    });
+    document.querySelectorAll("[data-code]").forEach(button=>button.addEventListener("click",()=>{
+      query.value=button.dataset.code;
+      vehicle.value=button.dataset.car;
+      try{localStorage.setItem("parthunter-vehicle",vehicle.value);}catch(_){}
+      searchPart(query.value);
+      document.querySelector(".section-title").scrollIntoView({behavior:"smooth",block:"start"});
+    }));
+
+    let installPrompt = null;
+    const installButton = document.getElementById("installButton");
+    window.addEventListener("beforeinstallprompt", event => {
+      event.preventDefault();
+      installPrompt = event;
+      installButton.hidden = false;
+    });
+    installButton.addEventListener("click", async () => {
+      if (!installPrompt) return;
+      await installPrompt.prompt();
+      installPrompt = null;
+      installButton.hidden = true;
+    });
+    window.addEventListener("appinstalled", () => { installButton.hidden = true; });
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+    }
+  </script>
+</body>
+</html>
