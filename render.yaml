@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: parthunter
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: PARTHUNTER_PUBLIC
+        value: "1"
+      - key: PARTHUNTER_TRUST_PROXY
+        value: "1"
+      - key: PARTHUNTER_RATE_LIMIT
+        value: "20"
+      - key: OLLAMA_API_KEY
+        sync: false
+      - key: PARTHUNTER_SEARCHAPI_KEY
+        sync: false
+      - key: PARTHUNTER_SERPAPI_KEY
+        sync: false
+      - key: PARTHUNTER_API_KEYS
+        sync: false
