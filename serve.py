@@ -414,6 +414,34 @@ def search_store(store_name, base_url, query, vehicle):
     return search_auto(store_name, base_url, query, vehicle)
 
 
+# ---------- keep web results to car parts ----------
+
+AUTO_RE = re.compile(
+    r"\b(?:car|cars|auto|automotive|vehicle|truck|ute|4wd|4x4|suv|engine|oil filter|fuel filter|cabin filter|brake|brakes|rotor|"
+    r"spark plug|wiper|alternator|radiator|clutch|suspension|shock absorber|exhaust|gearbox|timing belt|serpentine|tyre|tyres|"
+    r"headlight|toyota|mazda|holden|ford|nissan|mitsubishi|subaru|honda|hyundai|kia|volkswagen|vw|bmw|mercedes|audi|suzuki|"
+    r"isuzu|jeep|landcruiser|hilux|ranger|commodore|falcon|camry|corolla|wrx|navara|triton|pajero|lexus|volvo|peugeot|renault)\b", re.I)
+STRONG_CAR_RE = re.compile(r"\b(?:car|cars|auto|automotive|vehicle|truck|ute|4wd|4x4|suv)\b", re.I)
+NON_AUTO_RE = re.compile(
+    r"\b(?:fridge|refrigerator|water filter|pool|coffee|vacuum|air purifier|hepa|kitchen|furnace|hvac|aquarium|bicycle|bike|"
+    r"phone case|laptop|toy|doll|jewellery|jewelry)\b", re.I)
+AUTO_SELLER_RE = re.compile(r"supercheap|repco|autobarn|burson|auto ?one|autopro|sparesbox|autospares|auto ?parts|autoparts", re.I)
+
+
+def looks_automotive(title, seller, query):
+    """Drop shopping results that are clearly not car parts. Exact part codes are specific enough to keep."""
+    text = title or ""
+    if NON_AUTO_RE.search(text) and not STRONG_CAR_RE.search(text):
+        return False
+    if AUTO_RE.search(text) or AUTO_SELLER_RE.search(seller or ""):
+        return True
+    return not isinstance(query, NameQuery) and find_match_kind(query, {"title": text}) == "exact"
+
+
+def web_query(query):
+    return f"{query} car auto part" if isinstance(query, NameQuery) else f"{query} auto part"
+
+
 # ---------- web search (Google Shopping through a search API) ----------
 
 def web_results(payload, query, vehicle):
@@ -428,6 +456,8 @@ def web_results(payload, query, vehicle):
         title = str(item.get("title") or "Shopping result")
         link = item.get("offers_link") or item.get("product_link") or item.get("link")
         if not link or urlparse(str(link)).scheme not in {"https", "http"}:
+            continue
+        if not looks_automotive(title, str(item.get("seller") or item.get("source") or ""), query):
             continue
         delivery = item.get("delivery")
         if isinstance(delivery, dict):
@@ -452,7 +482,7 @@ def web_results(payload, query, vehicle):
 
 
 def search_searchapi(query, vehicle, key):
-    url = "https://www.searchapi.io/api/v1/search?" + urlencode({"engine": "google_shopping", "q": query, "gl": "au", "hl": "en"})
+    url = "https://www.searchapi.io/api/v1/search?" + urlencode({"engine": "google_shopping", "q": web_query(query), "gl": "au", "hl": "en"})
     request = Request(url, headers={"Accept": "application/json", "Authorization": f"Bearer {key}", "User-Agent": "PartHunter/4.0"})
     with urlopen(request, timeout=20) as response:
         return web_results(json.loads(response.read(2_000_000).decode("utf-8")), query, vehicle)
@@ -460,7 +490,7 @@ def search_searchapi(query, vehicle, key):
 
 def search_serpapi(query, vehicle, key):
     url = "https://serpapi.com/search.json?" + urlencode({
-        "engine": "google_shopping", "q": query, "gl": "au", "hl": "en",
+        "engine": "google_shopping", "q": web_query(query), "gl": "au", "hl": "en",
         "google_domain": "google.com.au", "api_key": key,
     })
     request = Request(url, headers={"Accept": "application/json", "User-Agent": "PartHunter/4.0"})
@@ -514,7 +544,7 @@ def bing_links(page):
 
 def ollama_urls(query, key):
     """Ollama's hosted web search (needs a free ollama.com API key); returns page links only."""
-    body = json.dumps({"query": f"{query} buy price australia", "max_results": 10}).encode("utf-8")
+    body = json.dumps({"query": f"{query} auto part buy price australia", "max_results": 10}).encode("utf-8")
     request = Request("https://ollama.com/api/web_search", data=body, method="POST", headers={
         "Authorization": f"Bearer {key}", "Content-Type": "application/json",
         "Accept": "application/json", "User-Agent": "PartHunter/4.0"})
@@ -532,7 +562,7 @@ def discover_urls(query, ollama_key="", engines=True):
         except NET_ERRORS as exc:
             failed, first_error = failed + 1, exc
     if engines and not urls:
-        q = f"{query} buy price australia"
+        q = f"{query} auto part buy price australia"
         for endpoint, parser in (
             ("https://html.duckduckgo.com/html/?" + urlencode({"q": q, "kl": "au-en"}), ddg_links),
             ("https://www.bing.com/search?" + urlencode({"q": q, "setmkt": "en-AU", "cc": "AU"}), bing_links),
@@ -623,7 +653,7 @@ def read_page(url, query, vehicle):
         name = unescape(m.group(1)).strip() if m else final
     text = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", page, flags=re.S | re.I)
     kind = find_match_kind(query, {"title": name, "body": strip_html(text)[:30000]})
-    if kind is None:
+    if kind is None or not looks_automotive(name, host, query):
         return None
     return {
         "retailer": host[4:] if host.startswith("www.") else host,
